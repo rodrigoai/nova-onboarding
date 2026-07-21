@@ -12,6 +12,13 @@ export type Company = {
   id: string;
   legalName: string;
   cnpj: string;
+  addressStreet: string | null;
+  addressNumber: string | null;
+  addressComplement: string | null;
+  addressDistrict: string | null;
+  addressCity: string | null;
+  addressState: string | null;
+  addressZipCode: string | null;
   noteTypes: NoteType[];
   municipalRegistration: string | null;
   stateRegistration: string | null;
@@ -43,6 +50,13 @@ type CompanyRow = {
   id: string;
   legal_name: string;
   cnpj: string;
+  address_street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  address_district: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  address_zip_code: string | null;
   note_types: NoteType[];
   municipal_registration: string | null;
   state_registration: string | null;
@@ -77,6 +91,13 @@ function fromRow(row: CompanyRow): Company {
     id: row.id,
     legalName: row.legal_name,
     cnpj: row.cnpj,
+    addressStreet: row.address_street,
+    addressNumber: row.address_number,
+    addressComplement: row.address_complement,
+    addressDistrict: row.address_district,
+    addressCity: row.address_city,
+    addressState: row.address_state,
+    addressZipCode: row.address_zip_code,
     noteTypes: row.note_types,
     municipalRegistration: row.municipal_registration,
     stateRegistration: row.state_registration,
@@ -109,6 +130,13 @@ function toRow(company: CompanyWrite) {
   return {
     legal_name: company.legalName,
     cnpj: company.cnpj,
+    address_street: company.addressStreet,
+    address_number: company.addressNumber,
+    address_complement: company.addressComplement,
+    address_district: company.addressDistrict,
+    address_city: company.addressCity,
+    address_state: company.addressState,
+    address_zip_code: company.addressZipCode,
     note_types: company.noteTypes,
     municipal_registration: company.municipalRegistration,
     state_registration: company.stateRegistration,

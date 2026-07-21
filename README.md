@@ -15,7 +15,7 @@ Internal fiscal onboarding workspace for companies that use nova.money. It inclu
 
 1. Copy `.env.example` to `.env` and add the Supabase project URL and publishable key.
 2. Generate an encryption key with `openssl rand -base64 32` and set `APP_ENCRYPTION_KEY`.
-3. Open the Supabase SQL Editor and run `supabase/migrations/20260721190000_create_companies.sql`.
+3. Open the Supabase SQL Editor and run the SQL files in `supabase/migrations` in filename order.
 4. In Supabase Authentication, create at least one user allowed to access the workspace.
 5. Install and start the app:
 

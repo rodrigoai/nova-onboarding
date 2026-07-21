@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Check, CircleAlert, CircleCheck, Eye, EyeOff, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { createCompany, updateCompany } from "@/app/actions";
 import { formatCnpj } from "@/lib/format";
 
@@ -12,6 +12,13 @@ export type CompanyFormValues = {
   id?: string;
   legalName?: string;
   cnpj?: string;
+  addressStreet?: string;
+  addressNumber?: string;
+  addressComplement?: string;
+  addressDistrict?: string;
+  addressCity?: string;
+  addressState?: string;
+  addressZipCode?: string;
   noteTypes?: ("SERVICE" | "PRODUCT")[];
   municipalRegistration?: string;
   stateRegistration?: string;
@@ -103,12 +110,85 @@ function ReferenceFields({ prefix, xml, pdf }: { prefix: "service" | "product"; 
 
 export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
   const [step, setStep] = useState(0);
+  const [cnpj, setCnpj] = useState(initial.cnpj ? formatCnpj(initial.cnpj) : "");
+  const [legalName, setLegalName] = useState(initial.legalName ?? "");
+  const [address, setAddress] = useState({
+    addressStreet: initial.addressStreet ?? "",
+    addressNumber: initial.addressNumber ?? "",
+    addressComplement: initial.addressComplement ?? "",
+    addressDistrict: initial.addressDistrict ?? "",
+    addressCity: initial.addressCity ?? "",
+    addressState: initial.addressState ?? "",
+    addressZipCode: initial.addressZipCode ?? "",
+  });
+  const [lookup, setLookup] = useState<{ status: "idle" | "loading" | "success" | "error"; message?: string }>({ status: "idle" });
   const [types, setTypes] = useState<("SERVICE" | "PRODUCT")[]>(initial.noteTypes ?? []);
   const [showPassword, setShowPassword] = useState(false);
   const [rules, setRules] = useState<IcmsRule[]>(initial.productIcmsRules?.length ? initial.productIcmsRules : [{ ...emptyRule }]);
   const formRef = useRef<HTMLFormElement>(null);
+  const skipInitialLookup = useRef(Boolean(initial.id && initial.cnpj));
   const action = useMemo(() => initial.id ? updateCompany.bind(null, initial.id) : createCompany, [initial.id]);
   const [state, formAction, pending] = useActionState(action, {});
+
+  useEffect(() => {
+    const rawCnpj = cnpj.replace(/\D/g, "");
+    if (rawCnpj.length !== 14) {
+      return;
+    }
+    if (skipInitialLookup.current) {
+      skipInitialLookup.current = false;
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLookup({ status: "loading", message: "Buscando dados do CNPJ..." });
+      try {
+        const response = await fetch(`/api/cnpj/${rawCnpj}`, { signal: controller.signal });
+        const data = await response.json() as {
+          error?: string;
+          legalName?: string;
+          addressStreet?: string;
+          addressNumber?: string;
+          addressComplement?: string;
+          addressDistrict?: string;
+          addressCity?: string;
+          addressState?: string;
+          addressZipCode?: string;
+        };
+        if (!response.ok) throw new Error(data.error || "Não foi possível consultar este CNPJ.");
+        setLegalName(data.legalName ?? "");
+        setAddress({
+          addressStreet: data.addressStreet ?? "",
+          addressNumber: data.addressNumber ?? "",
+          addressComplement: data.addressComplement ?? "",
+          addressDistrict: data.addressDistrict ?? "",
+          addressCity: data.addressCity ?? "",
+          addressState: data.addressState ?? "",
+          addressZipCode: data.addressZipCode ?? "",
+        });
+        setLookup({ status: "success", message: "Dados encontrados e preenchidos automaticamente." });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setLookup({ status: "error", message: error instanceof Error ? error.message : "Não foi possível consultar este CNPJ." });
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [cnpj]);
+
+  function updateAddress(key: keyof typeof address, value: string) {
+    setAddress((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateCnpj(value: string) {
+    const formatted = formatCnpj(value);
+    if (formatted.replace(/\D/g, "").length !== 14) setLookup({ status: "idle" });
+    setCnpj(formatted);
+  }
 
   function toggleType(type: "SERVICE" | "PRODUCT") {
     setTypes((current) => current.includes(type) ? current.filter((item) => item !== type) : [...current, type]);
@@ -159,13 +239,59 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
             <section className="step-enter" data-company>
               <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Identificação</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Dados da empresa emissora</h2>
-              <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Informe quem emitirá as notas e quais documentos fiscais serão usados.</p>
-              <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                <Field label="Razão social" name="legalName" defaultValue={initial.legalName} placeholder="Nome registrado da empresa" required />
+              <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Informe o CNPJ para buscar a razão social e o endereço automaticamente.</p>
+              <div className="mt-7 max-w-md">
                 <label className="block">
                   <span className="label">CNPJ <span className="text-[#af3d34]">*</span></span>
-                  <input className="field" name="cnpj" defaultValue={initial.cnpj ? formatCnpj(initial.cnpj) : ""} placeholder="00.000.000/0000-00" required inputMode="text" onChange={(event) => { event.currentTarget.value = formatCnpj(event.currentTarget.value); }} />
+                  <input className="field" name="cnpj" value={cnpj} placeholder="00.000.000/0000-00" required inputMode="text" onChange={(event) => updateCnpj(event.currentTarget.value)} />
                 </label>
+              </div>
+              {lookup.status !== "idle" && (
+                <div aria-live="polite" className={`mt-3 flex items-center gap-2 text-xs font-semibold ${lookup.status === "error" ? "text-[#9d4a42]" : lookup.status === "success" ? "text-[#367357]" : "text-[#6e6e7c]"}`}>
+                  {lookup.status === "loading" && <LoaderCircle className="animate-spin" size={15} />}
+                  {lookup.status === "success" && <CircleCheck size={15} />}
+                  {lookup.status === "error" && <CircleAlert size={15} />}
+                  {lookup.message}
+                </div>
+              )}
+
+              <div className="mt-6 border-t border-[#e9e9ed] pt-6">
+                <h3 className="text-sm font-bold">Dados cadastrais</h3>
+                <p className="mt-1 text-xs leading-5 text-[#777481]">Os dados preenchidos pela consulta podem ser corrigidos antes de continuar.</p>
+                <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="label">Razão social <span className="text-[#af3d34]">*</span></span>
+                    <input className="field" name="legalName" value={legalName} onChange={(event) => setLegalName(event.currentTarget.value)} placeholder="Nome registrado da empresa" required />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="label">Logradouro</span>
+                    <input className="field" name="addressStreet" value={address.addressStreet} onChange={(event) => updateAddress("addressStreet", event.currentTarget.value)} placeholder="Rua, avenida..." />
+                  </label>
+                  <label className="block">
+                    <span className="label">Número</span>
+                    <input className="field" name="addressNumber" value={address.addressNumber} onChange={(event) => updateAddress("addressNumber", event.currentTarget.value)} placeholder="Número" />
+                  </label>
+                  <label className="block">
+                    <span className="label">Complemento</span>
+                    <input className="field" name="addressComplement" value={address.addressComplement} onChange={(event) => updateAddress("addressComplement", event.currentTarget.value)} placeholder="Sala, conjunto..." />
+                  </label>
+                  <label className="block">
+                    <span className="label">Bairro</span>
+                    <input className="field" name="addressDistrict" value={address.addressDistrict} onChange={(event) => updateAddress("addressDistrict", event.currentTarget.value)} placeholder="Bairro" />
+                  </label>
+                  <label className="block">
+                    <span className="label">CEP</span>
+                    <input className="field" name="addressZipCode" value={address.addressZipCode} onChange={(event) => updateAddress("addressZipCode", event.currentTarget.value)} placeholder="00000-000" inputMode="text" />
+                  </label>
+                  <label className="block">
+                    <span className="label">Cidade</span>
+                    <input className="field" name="addressCity" value={address.addressCity} onChange={(event) => updateAddress("addressCity", event.currentTarget.value)} placeholder="Cidade" />
+                  </label>
+                  <label className="block">
+                    <span className="label">UF</span>
+                    <input className="field" name="addressState" value={address.addressState} onChange={(event) => updateAddress("addressState", event.currentTarget.value.toUpperCase().slice(0, 2))} placeholder="UF" maxLength={2} />
+                  </label>
+                </div>
               </div>
               <fieldset className="mt-7">
                 <legend className="label">Qual tipo de nota? <span className="text-[#af3d34]">*</span></legend>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, FileText, Pencil, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, MapPin, Pencil, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { DeleteButton } from "@/components/delete-button";
@@ -47,9 +47,13 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const rules = company.productIcmsRules ?? [];
   const service = company.noteTypes.includes("SERVICE");
   const product = company.noteTypes.includes("PRODUCT");
+  const addressLine = [company.addressStreet, company.addressNumber].filter(Boolean).join(", ");
+  const addressLocation = [company.addressDistrict, company.addressCity, company.addressState].filter(Boolean).join(" · ");
   const copySummary = [
     company.legalName,
     `CNPJ: ${formatCnpj(company.cnpj)}`,
+    addressLine ? `Endereço: ${addressLine}${company.addressComplement ? `, ${company.addressComplement}` : ""}` : "",
+    addressLocation ? `${addressLocation}${company.addressZipCode ? ` · CEP ${company.addressZipCode}` : ""}` : "",
     `Tipo de nota: ${company.noteTypes.map((item) => item === "SERVICE" ? "Serviço" : "Produto").join(" e ")}`,
     service ? `Inscrição Municipal: ${company.municipalRegistration || "Não informado"}` : "",
     product ? `Inscrição Estadual: ${company.stateRegistration || "Não informado"}` : "",
@@ -98,6 +102,19 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               <p className="mt-2 text-xs leading-5 text-[#7c7984]">A senha é descriptografada somente nesta visualização e ao copiar os dados.</p>
             </section>
           </div>
+
+          <section className="mt-9">
+            <div className="mb-2 flex items-center gap-2"><MapPin size={17} className="text-[#52248e]" /><h2 className="font-bold">Endereço cadastral</h2></div>
+            <dl className="grid rounded-2xl border border-[#e9e9ed] bg-white px-5 sm:grid-cols-2 sm:gap-x-7">
+              <Value label="Logradouro" value={company.addressStreet} />
+              <Value label="Número" value={company.addressNumber} />
+              <Value label="Complemento" value={company.addressComplement} />
+              <Value label="Bairro" value={company.addressDistrict} />
+              <Value label="Cidade" value={company.addressCity} />
+              <Value label="UF" value={company.addressState} />
+              <Value label="CEP" value={company.addressZipCode} />
+            </dl>
+          </section>
 
           {service && (
             <section className="mt-9">
