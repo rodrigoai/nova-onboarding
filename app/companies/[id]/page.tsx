@@ -4,9 +4,9 @@ import { ArrowLeft, ExternalLink, FileText, Pencil, ShieldCheck } from "lucide-r
 import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { DeleteButton } from "@/components/delete-button";
+import { getCompany } from "@/lib/companies";
 import { decryptSecret } from "@/lib/crypto";
 import { formatCnpj, formatDate } from "@/lib/format";
-import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -35,19 +35,16 @@ function LinkValue({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function percent(value: { toString(): string } | null) {
+function percent(value: string | number | null) {
   return value ? `${value.toString()}%` : null;
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!process.env.DATABASE_URL) notFound();
-  const company = await getPrisma().company.findUnique({ where: { id } });
+  const company = await getCompany(id);
   if (!company) notFound();
   const password = decryptSecret(company.certificatePassword);
-  const rules = Array.isArray(company.productIcmsRules)
-    ? company.productIcmsRules as Array<{ state?: string; taxStatus?: string; rate?: string; taxBase?: string }>
-    : [];
+  const rules = company.productIcmsRules ?? [];
   const service = company.noteTypes.includes("SERVICE");
   const product = company.noteTypes.includes("PRODUCT");
   const copySummary = [

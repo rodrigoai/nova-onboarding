@@ -4,8 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { encryptSecret } from "@/lib/crypto";
+import {
+  createCompanyRecord,
+  deleteCompanyRecord,
+  getCompany,
+  updateCompanyRecord,
+  type CompanyWrite,
+} from "@/lib/companies";
 import { digits } from "@/lib/format";
-import { getPrisma } from "@/lib/prisma";
 
 export type FormState = { error?: string };
 
@@ -123,7 +129,11 @@ function parseCompany(formData: FormData) {
 }
 
 function messageFromError(error: unknown) {
-  if (error instanceof Error && error.message.includes("Unique constraint")) {
+  if (
+    error instanceof Error &&
+    (error.message.includes("duplicate key") ||
+      (error as Error & { code?: string }).code === "23505")
+  ) {
     return "Já existe uma empresa com este CNPJ.";
   }
   return "Não foi possível salvar. Revise os dados e tente novamente.";
@@ -135,15 +145,13 @@ export async function createCompany(_: FormState, formData: FormData): Promise<F
   let companyId: string;
   try {
     const data = result.data;
-    const company = await getPrisma().company.create({
-      data: {
-        ...data,
-        cnpj: digits(data.cnpj),
-        certificatePassword: encryptSecret(data.certificatePassword),
-        municipalRegistration: data.noteTypes.includes("SERVICE") ? data.municipalRegistration : null,
-        stateRegistration: data.noteTypes.includes("PRODUCT") ? data.stateRegistration : null,
-      },
-    });
+    const company = await createCompanyRecord({
+      ...data,
+      cnpj: digits(data.cnpj),
+      certificatePassword: encryptSecret(data.certificatePassword),
+      municipalRegistration: data.noteTypes.includes("SERVICE") ? data.municipalRegistration : null,
+      stateRegistration: data.noteTypes.includes("PRODUCT") ? data.stateRegistration : null,
+    } as CompanyWrite);
     companyId = company.id;
     revalidatePath("/");
   } catch (error) {
@@ -158,19 +166,16 @@ export async function updateCompany(id: string, _: FormState, formData: FormData
   let companyId: string;
   try {
     const data = result.data;
-    const current = await getPrisma().company.findUnique({ where: { id }, select: { certificatePassword: true } });
-    const company = await getPrisma().company.update({
-      where: { id },
-      data: {
-        ...data,
-        cnpj: digits(data.cnpj),
-        certificatePassword: data.certificatePassword
-          ? encryptSecret(data.certificatePassword)
-          : current?.certificatePassword,
-        municipalRegistration: data.noteTypes.includes("SERVICE") ? data.municipalRegistration : null,
-        stateRegistration: data.noteTypes.includes("PRODUCT") ? data.stateRegistration : null,
-      },
-    });
+    const current = await getCompany(id);
+    const company = await updateCompanyRecord(id, {
+      ...data,
+      cnpj: digits(data.cnpj),
+      certificatePassword: data.certificatePassword
+        ? encryptSecret(data.certificatePassword)
+        : current?.certificatePassword ?? null,
+      municipalRegistration: data.noteTypes.includes("SERVICE") ? data.municipalRegistration : null,
+      stateRegistration: data.noteTypes.includes("PRODUCT") ? data.stateRegistration : null,
+    } as CompanyWrite);
     companyId = company.id;
     revalidatePath("/");
     revalidatePath(`/companies/${id}`);
@@ -181,7 +186,7 @@ export async function updateCompany(id: string, _: FormState, formData: FormData
 }
 
 export async function deleteCompany(id: string) {
-  await getPrisma().company.delete({ where: { id } });
+  await deleteCompanyRecord(id);
   revalidatePath("/");
   redirect("/");
 }

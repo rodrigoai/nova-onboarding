@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Building2, LifeBuoy, Settings } from "lucide-react";
+import { Building2, LifeBuoy, LogOut, Settings } from "lucide-react";
+import { signOut } from "@/app/auth/actions";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -20,6 +21,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mt-6 hidden border-t border-white/10 pt-5 text-xs leading-5 text-white/45 lg:absolute lg:bottom-5 lg:left-5 lg:right-5 lg:block">
           <span className="mb-1 flex items-center gap-2 text-white/65"><LifeBuoy size={14} /> Operações fiscais</span>
           Dados para emissão de notas
+          <form action={signOut} className="mt-3">
+            <button className="flex items-center gap-2 text-xs font-semibold text-white/55 transition hover:text-white" type="submit"><LogOut size={14} /> Sair</button>
+          </form>
         </div>
       </aside>
       <main className="min-w-0 lg:col-start-2">{children}</main>

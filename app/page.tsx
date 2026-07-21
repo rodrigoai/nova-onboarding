@@ -1,25 +1,18 @@
 import Link from "next/link";
 import { ArrowRight, Building2, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { listCompanies } from "@/lib/companies";
 import { formatCnpj, formatDate } from "@/lib/format";
-import { getPrisma } from "@/lib/prisma";
+import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ q?: string; type?: string }>;
 
 async function getCompanies(query: string, type: string) {
-  if (!process.env.DATABASE_URL) return { companies: [], configured: false };
+  if (!isSupabaseConfigured()) return { companies: [], configured: false };
   try {
-    const companies = await getPrisma().company.findMany({
-      where: {
-        AND: [
-          query ? { OR: [{ legalName: { contains: query, mode: "insensitive" } }, { cnpj: { contains: query.replace(/\D/g, "") } }] } : {},
-          type === "SERVICE" || type === "PRODUCT" ? { noteTypes: { has: type } } : {},
-        ],
-      },
-      orderBy: { updatedAt: "desc" },
-    });
+    const companies = await listCompanies(query, type);
     return { companies, configured: true };
   } catch {
     return { companies: [], configured: false };
@@ -48,7 +41,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           {!configured && (
             <div className="mt-6 flex items-start gap-3 rounded-xl border border-[#d8e7db] bg-[#f0f8f2] p-4 text-sm leading-6 text-[#31543c]">
               <span className="mt-1 size-2 shrink-0 rounded-full bg-[#31bd6b]" />
-              <div><strong>Banco aguardando configuração.</strong> Adicione <code className="rounded bg-white/70 px-1.5 py-0.5">DATABASE_URL</code> e execute a migration para começar a salvar empresas.</div>
+              <div><strong>Supabase aguardando configuração.</strong> Confira as variáveis públicas e aplique a migration antes de salvar empresas.</div>
             </div>
           )}
 

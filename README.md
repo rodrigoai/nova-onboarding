@@ -6,19 +6,21 @@ Internal fiscal onboarding workspace for companies that use nova.money. It inclu
 
 - Next.js 16 App Router and React 19
 - TypeScript and Tailwind CSS 4
-- Prisma ORM 7 with PostgreSQL
+- Supabase Postgres, Data API, Auth, and Row Level Security
+- `@supabase/ssr` cookie-based sessions
 - Vercel-ready server actions
 - AES-256-GCM encryption for certificate passwords
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and add a PostgreSQL `DATABASE_URL`.
+1. Copy `.env.example` to `.env` and add the Supabase project URL and publishable key.
 2. Generate an encryption key with `openssl rand -base64 32` and set `APP_ENCRYPTION_KEY`.
-3. Install and prepare the database:
+3. Open the Supabase SQL Editor and run `supabase/migrations/20260721190000_create_companies.sql`.
+4. In Supabase Authentication, create at least one user allowed to access the workspace.
+5. Install and start the app:
 
 ```bash
 npm install
-npm run db:migrate
 npm run dev
 ```
 
@@ -27,11 +29,13 @@ Open `http://localhost:3000`.
 ## Vercel deployment
 
 1. Import this repository into Vercel.
-2. Add a PostgreSQL provider from the Vercel Marketplace (Prisma Postgres, Neon, or Supabase) and connect it to the project so `DATABASE_URL` is available.
+2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the Vercel production and preview environments.
 3. Add `APP_ENCRYPTION_KEY` as a production and preview environment variable. Keep the same key while encrypted records exist.
-4. Apply migrations with `npm run db:deploy` against the production database.
-5. Deploy. `postinstall` generates Prisma Client automatically.
+4. Apply the SQL migration from `supabase/migrations` in the Supabase SQL Editor.
+5. Create authorized users under Supabase Authentication and deploy.
 
 ## Security note
 
-Certificate passwords are encrypted before storage. In development only, when no encryption key is supplied, they use an explicit development-only representation. Production saves fail if the key is missing. Before exposing the app outside a trusted network, add authentication and authorization at the application or Vercel level because the records contain sensitive fiscal data.
+Certificate passwords are encrypted before storage. In development only, when no encryption key is supplied, they use an explicit development-only representation. Production saves fail if the key is missing.
+
+The `companies` table has Row Level Security enabled. Anonymous access is revoked; authenticated Supabase users can read and manage records. The publishable key is public by design and does not bypass these policies. Control workspace membership through Supabase Authentication.

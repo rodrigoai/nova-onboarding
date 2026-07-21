@@ -34,8 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
-# generated Prisma client
+# local generated artifacts
 /app/generated/
+
 
 # vercel
 .vercel

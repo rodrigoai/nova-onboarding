@@ -11,14 +11,14 @@ export function formatCnpj(value: string) {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
-export function formatDate(value: Date) {
+export function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(value);
+  }).format(typeof value === "string" ? new Date(value) : value);
 }
 
-export function rate(value: { toString(): string } | null | undefined) {
+export function rate(value: string | number | { toString(): string } | null | undefined) {
   return value?.toString() ?? "";
 }

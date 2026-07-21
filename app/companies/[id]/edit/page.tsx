@@ -1,15 +1,14 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CompanyForm, type CompanyFormValues } from "@/components/company-form";
+import { getCompany } from "@/lib/companies";
 import { rate } from "@/lib/format";
-import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!process.env.DATABASE_URL) notFound();
-  const company = await getPrisma().company.findUnique({ where: { id } });
+  const company = await getCompany(id);
   if (!company) notFound();
   const rules = Array.isArray(company.productIcmsRules) ? company.productIcmsRules : [];
   const initial: CompanyFormValues = {
