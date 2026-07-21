@@ -235,8 +235,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
         </ol>
 
         <div className="rounded-[22px] border border-[#e9e9ed] bg-white p-5 shadow-[0_16px_45px_rgba(82,36,142,.07)] sm:p-8">
-          {step === 0 && (
-            <section className="step-enter" data-company>
+          <section className={step === 0 ? "step-enter" : "hidden"} data-company>
               <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Identificação</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Dados da empresa emissora</h2>
               <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Informe o CNPJ para buscar a razão social e o endereço automaticamente.</p>
@@ -313,11 +312,9 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                 {types.includes("SERVICE") && <Field label="Inscrição Municipal" name="municipalRegistration" defaultValue={initial.municipalRegistration} placeholder="Inscrição municipal" required />}
                 {types.includes("PRODUCT") && <Field label="Inscrição Estadual" name="stateRegistration" defaultValue={initial.stateRegistration} placeholder="Número ou ISENTO" hint="Se a empresa for isenta, informe ISENTO." required />}
               </div>
-            </section>
-          )}
+          </section>
 
-          {step === 1 && (
-            <section className="step-enter">
+          <section className={step === 1 ? "step-enter" : "hidden"}>
               <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Certificado digital</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">A1 / E-CNPJ</h2>
               <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Adicione um link seguro para o arquivo PFX. A senha será criptografada no banco.</p>
@@ -333,11 +330,9 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                   </div>
                 </label>
               </div>
-            </section>
-          )}
+          </section>
 
-          {step === 2 && (
-            <section className="step-enter">
+          <section className={step === 2 ? "step-enter" : "hidden"}>
               <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Produtos e serviços</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Informações tributárias</h2>
               <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Preencha somente as seções aplicáveis. Alíquotas devem ser informadas em porcentagem.</p>
@@ -392,11 +387,9 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                   </div>
                 )}
               </div>
-            </section>
-          )}
+          </section>
 
-          {step === 3 && (
-            <section className="step-enter">
+          <section className={step === 3 ? "step-enter" : "hidden"}>
               <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Descrição geral</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Exceções e alertas</h2>
               <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Registre particularidades que a equipe deve observar ao emitir notas.</p>
@@ -408,8 +401,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                 <Check className="mt-1 shrink-0" size={16} />
                 Ao salvar, o cadastro ficará disponível na lista de empresas e poderá ser copiado, editado ou excluído.
               </div>
-            </section>
-          )}
+          </section>
 
           {state.error && <div role="alert" className="mt-6 rounded-lg bg-[#fff1ef] px-4 py-3 text-sm font-semibold text-[#963b33]">{state.error}</div>}
         </div>
