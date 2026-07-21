@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum NoteType {
+  SERVICE
+  PRODUCT
+}
+
+model Company {
+  id                    String     @id @default(cuid())
+  legalName             String
+  cnpj                  String     @unique
+  noteTypes             NoteType[]
+  municipalRegistration String?
+  stateRegistration     String?
+  certificateUrl        String?
+  certificatePassword   String?
+
+  serviceCnae           String?
+  serviceCode           String?
+  serviceIss            Decimal?   @db.Decimal(7, 4)
+  serviceIr             Decimal?   @db.Decimal(7, 4)
+  servicePis            Decimal?   @db.Decimal(7, 4)
+  serviceCofins         Decimal?   @db.Decimal(7, 4)
+  serviceCsll           Decimal?   @db.Decimal(7, 4)
+  serviceXmlUrl         String?
+  servicePdfUrl         String?
+
+  productCnae           String?
+  productNcm            String?
+  productIr             Decimal?   @db.Decimal(7, 4)
+  productPis            Decimal?   @db.Decimal(7, 4)
+  productCofins         Decimal?   @db.Decimal(7, 4)
+  productIcmsRules      Json?
+  productXmlUrl         String?
+  productPdfUrl         String?
+
+  observations          String?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@index([legalName])
+  @@index([updatedAt])
+}

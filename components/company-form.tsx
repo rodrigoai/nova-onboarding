@@ -1,0 +1,302 @@
+"use client";
+
+import Link from "next/link";
+import { useActionState, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { createCompany, updateCompany } from "@/app/actions";
+import { formatCnpj } from "@/lib/format";
+
+type IcmsRule = { state: string; taxStatus: string; rate: string; taxBase: string };
+
+export type CompanyFormValues = {
+  id?: string;
+  legalName?: string;
+  cnpj?: string;
+  noteTypes?: ("SERVICE" | "PRODUCT")[];
+  municipalRegistration?: string;
+  stateRegistration?: string;
+  certificateUrl?: string;
+  serviceCnae?: string;
+  serviceCode?: string;
+  serviceIss?: string;
+  serviceIr?: string;
+  servicePis?: string;
+  serviceCofins?: string;
+  serviceCsll?: string;
+  serviceXmlUrl?: string;
+  servicePdfUrl?: string;
+  productCnae?: string;
+  productNcm?: string;
+  productIr?: string;
+  productPis?: string;
+  productCofins?: string;
+  productIcmsRules?: IcmsRule[];
+  productXmlUrl?: string;
+  productPdfUrl?: string;
+  observations?: string;
+};
+
+const steps = ["Empresa", "Certificado", "Tributação", "Observações"];
+const emptyRule: IcmsRule = { state: "", taxStatus: "", rate: "", taxBase: "" };
+
+function Field({
+  label,
+  name,
+  defaultValue,
+  placeholder,
+  required,
+  type = "text",
+  hint,
+  inputMode,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string;
+  placeholder?: string;
+  required?: boolean;
+  type?: string;
+  hint?: string;
+  inputMode?: "text" | "decimal";
+}) {
+  return (
+    <label className="block">
+      <span className="label">{label}{required && <span className="text-[#af3d34]"> *</span>}</span>
+      <input className="field" name={name} type={type} defaultValue={defaultValue} placeholder={placeholder} required={required} inputMode={inputMode} />
+      {hint && <span className="hint block">{hint}</span>}
+    </label>
+  );
+}
+
+function RateField({ label, name, defaultValue }: { label: string; name: string; defaultValue?: string }) {
+  return (
+    <label className="block">
+      <span className="label">{label}</span>
+      <div className="relative">
+        <input className="field pr-9" name={name} defaultValue={defaultValue} placeholder="0,00" inputMode="decimal" />
+        <span className="pointer-events-none absolute right-3 top-3 text-sm text-[#8b918a]">%</span>
+      </div>
+    </label>
+  );
+}
+
+function ReferenceFields({ prefix, xml, pdf }: { prefix: "service" | "product"; xml?: string; pdf?: string }) {
+  const [hasXml, setHasXml] = useState(Boolean(xml));
+  const [hasPdf, setHasPdf] = useState(Boolean(pdf));
+  return (
+    <div className="border-t border-[#e7e9e5] pt-5">
+      <h3 className="text-sm font-bold">Notas de referência</h3>
+      <div className="mt-3 space-y-3">
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#4d534d]">
+          <input className="size-4 accent-[#1d6d42]" type="checkbox" checked={hasXml} onChange={(event) => setHasXml(event.target.checked)} />
+          Possui nota de referência XML
+        </label>
+        {hasXml && <input className="field step-enter" type="url" name={`${prefix}XmlUrl`} defaultValue={xml} placeholder="https://.../nota.xml" />}
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#4d534d]">
+          <input className="size-4 accent-[#1d6d42]" type="checkbox" checked={hasPdf} onChange={(event) => setHasPdf(event.target.checked)} />
+          Possui nota de referência PDF
+        </label>
+        {hasPdf && <input className="field step-enter" type="url" name={`${prefix}PdfUrl`} defaultValue={pdf} placeholder="https://.../nota.pdf" />}
+      </div>
+    </div>
+  );
+}
+
+export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
+  const [step, setStep] = useState(0);
+  const [types, setTypes] = useState<("SERVICE" | "PRODUCT")[]>(initial.noteTypes ?? []);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rules, setRules] = useState<IcmsRule[]>(initial.productIcmsRules?.length ? initial.productIcmsRules : [{ ...emptyRule }]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const action = useMemo(() => initial.id ? updateCompany.bind(null, initial.id) : createCompany, [initial.id]);
+  const [state, formAction, pending] = useActionState(action, {});
+
+  function toggleType(type: "SERVICE" | "PRODUCT") {
+    setTypes((current) => current.includes(type) ? current.filter((item) => item !== type) : [...current, type]);
+  }
+
+  function nextStep() {
+    if (step === 0) {
+      const required = [...(formRef.current?.querySelectorAll("[data-company] input[required]") ?? [])] as HTMLInputElement[];
+      if (types.length === 0) return;
+      const invalid = required.find((input) => !input.reportValidity());
+      if (invalid) return;
+    }
+    setStep((current) => Math.min(current + 1, steps.length - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function updateRule(index: number, key: keyof IcmsRule, value: string) {
+    setRules((current) => current.map((rule, ruleIndex) => ruleIndex === index ? { ...rule, [key]: value } : rule));
+  }
+
+  return (
+    <form ref={formRef} action={formAction} className="page-enter">
+      <input type="hidden" name="productIcmsRules" value={JSON.stringify(rules)} />
+      <div className="border-b border-[#e0e3de] bg-white px-5 py-5 sm:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-5">
+          <div>
+            <Link href={initial.id ? `/companies/${initial.id}` : "/"} className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#6d736d] hover:text-[#222722]">
+              <ArrowLeft size={14} /> Voltar
+            </Link>
+            <h1 className="text-2xl font-bold tracking-[-0.035em] sm:text-[28px]">{initial.id ? "Editar empresa" : "Nova empresa"}</h1>
+          </div>
+          <span className="hidden text-sm text-[#727872] sm:block">Etapa {step + 1} de {steps.length}</span>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8 lg:px-12 lg:py-10">
+        <ol className="mb-8 grid grid-cols-4 gap-2" aria-label="Etapas do formulário">
+          {steps.map((label, index) => (
+            <li key={label} className="min-w-0">
+              <div className={`mb-2 h-1 rounded-full transition-colors ${index <= step ? "bg-[#2fcf74]" : "bg-[#dfe3de]"}`} />
+              <span className={`hidden text-xs font-bold sm:block ${index === step ? "text-[#1b512f]" : "text-[#8a9089]"}`}>{label}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div className="rounded-2xl border border-[#e0e3de] bg-white p-5 shadow-[0_12px_35px_rgba(31,42,34,.05)] sm:p-8">
+          {step === 0 && (
+            <section className="step-enter" data-company>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Identificação</p>
+              <h2 className="text-xl font-bold tracking-[-0.025em]">Dados da empresa emissora</h2>
+              <p className="mt-2 text-sm leading-6 text-[#70766f]">Informe quem emitirá as notas e quais documentos fiscais serão usados.</p>
+              <div className="mt-7 grid gap-5 sm:grid-cols-2">
+                <Field label="Razão social" name="legalName" defaultValue={initial.legalName} placeholder="Nome registrado da empresa" required />
+                <label className="block">
+                  <span className="label">CNPJ <span className="text-[#af3d34]">*</span></span>
+                  <input className="field" name="cnpj" defaultValue={initial.cnpj ? formatCnpj(initial.cnpj) : ""} placeholder="00.000.000/0000-00" required inputMode="text" onChange={(event) => { event.currentTarget.value = formatCnpj(event.currentTarget.value); }} />
+                </label>
+              </div>
+              <fieldset className="mt-7">
+                <legend className="label">Qual tipo de nota? <span className="text-[#af3d34]">*</span></legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(["SERVICE", "PRODUCT"] as const).map((type) => {
+                    const selected = types.includes(type);
+                    const label = type === "SERVICE" ? "Serviço" : "Produtos";
+                    return (
+                      <label key={type} className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-4 transition ${selected ? "border-[#35b96b] bg-[#f0fbf5]" : "border-[#e0e4df] hover:border-[#c5cbc4]"}`}>
+                        <span className="font-bold">{label}</span>
+                        <input className="size-4 accent-[#1e7545]" type="checkbox" name="noteTypes" value={type} checked={selected} onChange={() => toggleType(type)} />
+                      </label>
+                    );
+                  })}
+                </div>
+                {types.length === 0 && <p className="hint text-[#9d4a42]">Selecione ao menos uma opção.</p>}
+              </fieldset>
+              <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                {types.includes("SERVICE") && <Field label="Inscrição Municipal" name="municipalRegistration" defaultValue={initial.municipalRegistration} placeholder="Inscrição municipal" required />}
+                {types.includes("PRODUCT") && <Field label="Inscrição Estadual" name="stateRegistration" defaultValue={initial.stateRegistration} placeholder="Número ou ISENTO" hint="Se a empresa for isenta, informe ISENTO." required />}
+              </div>
+            </section>
+          )}
+
+          {step === 1 && (
+            <section className="step-enter">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Certificado digital</p>
+              <h2 className="text-xl font-bold tracking-[-0.025em]">A1 / E-CNPJ</h2>
+              <p className="mt-2 text-sm leading-6 text-[#70766f]">Adicione um link seguro para o arquivo PFX. A senha será criptografada no banco.</p>
+              <div className="mt-7 space-y-5">
+                <Field label="Link do certificado PFX" name="certificateUrl" type="url" defaultValue={initial.certificateUrl} placeholder="https://..." hint="Use um link com acesso restrito e prazo de expiração quando possível." />
+                <label className="block">
+                  <span className="label">Senha do certificado</span>
+                  <div className="relative">
+                    <input className="field pr-12" name="certificatePassword" type={showPassword ? "text" : "password"} placeholder={initial.id ? "Deixe vazio para manter a senha atual" : "Senha do arquivo"} autoComplete="new-password" />
+                    <button type="button" aria-label={showPassword ? "Ocultar senha" : "Exibir senha"} className="absolute right-3 top-3 text-[#777d76]" onClick={() => setShowPassword((value) => !value)}>
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </label>
+              </div>
+            </section>
+          )}
+
+          {step === 2 && (
+            <section className="step-enter">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Produtos e serviços</p>
+              <h2 className="text-xl font-bold tracking-[-0.025em]">Informações tributárias</h2>
+              <p className="mt-2 text-sm leading-6 text-[#70766f]">Preencha somente as seções aplicáveis. Alíquotas devem ser informadas em porcentagem.</p>
+              <div className="mt-8 space-y-10">
+                {types.includes("SERVICE") && (
+                  <div>
+                    <h3 className="mb-5 border-b border-[#e6e9e4] pb-3 text-base font-bold">Serviços</h3>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <Field label="CNAE de referência" name="serviceCnae" defaultValue={initial.serviceCnae} placeholder="0000-0/00" />
+                      <Field label="Código na lista de serviço" name="serviceCode" defaultValue={initial.serviceCode} placeholder="Código municipal" />
+                    </div>
+                    <p className="mb-3 mt-6 text-sm font-bold">Alíquotas</p>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+                      <RateField label="ISS" name="serviceIss" defaultValue={initial.serviceIss} />
+                      <RateField label="IR" name="serviceIr" defaultValue={initial.serviceIr} />
+                      <RateField label="PIS" name="servicePis" defaultValue={initial.servicePis} />
+                      <RateField label="Cofins" name="serviceCofins" defaultValue={initial.serviceCofins} />
+                      <RateField label="CSLL" name="serviceCsll" defaultValue={initial.serviceCsll} />
+                    </div>
+                    <div className="mt-7"><ReferenceFields prefix="service" xml={initial.serviceXmlUrl} pdf={initial.servicePdfUrl} /></div>
+                  </div>
+                )}
+                {types.includes("PRODUCT") && (
+                  <div>
+                    <h3 className="mb-5 border-b border-[#e6e9e4] pb-3 text-base font-bold">Produtos</h3>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <Field label="CNAE de referência" name="productCnae" defaultValue={initial.productCnae} placeholder="0000-0/00" />
+                      <Field label="NCM" name="productNcm" defaultValue={initial.productNcm} placeholder="0000.00.00" />
+                    </div>
+                    <div className="mt-6 flex items-center justify-between">
+                      <p className="text-sm font-bold">Regras de ICMS</p>
+                      <button className="btn-ghost !min-h-8 !px-2 text-xs" type="button" onClick={() => setRules((current) => [...current, { ...emptyRule }])}><Plus size={14} /> Adicionar estado</button>
+                    </div>
+                    <div className="mt-3 space-y-3">
+                      {rules.map((rule, index) => (
+                        <div key={index} className="grid gap-3 rounded-xl bg-[#f7f8f5] p-3 sm:grid-cols-[.65fr_1.35fr_1fr_1fr_auto]">
+                          <input className="field" aria-label="Estado" placeholder="UF" maxLength={2} value={rule.state} onChange={(e) => updateRule(index, "state", e.target.value.toUpperCase())} />
+                          <input className="field" aria-label="Situação tributária" placeholder="Situação tributária" value={rule.taxStatus} onChange={(e) => updateRule(index, "taxStatus", e.target.value)} />
+                          <input className="field" aria-label="Alíquota" placeholder="Alíquota %" inputMode="decimal" value={rule.rate} onChange={(e) => updateRule(index, "rate", e.target.value)} />
+                          <input className="field" aria-label="Base de cálculo" placeholder="Base de cálculo" value={rule.taxBase} onChange={(e) => updateRule(index, "taxBase", e.target.value)} />
+                          <button type="button" aria-label="Remover regra" className="grid size-11 place-items-center rounded-lg text-[#9a514b] hover:bg-[#f5e8e6]" onClick={() => setRules((current) => current.length === 1 ? [{ ...emptyRule }] : current.filter((_, ruleIndex) => ruleIndex !== index))}><Trash2 size={16} /></button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mb-3 mt-6 text-sm font-bold">Outras alíquotas</p>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                      <RateField label="IR" name="productIr" defaultValue={initial.productIr} />
+                      <RateField label="PIS" name="productPis" defaultValue={initial.productPis} />
+                      <RateField label="Cofins" name="productCofins" defaultValue={initial.productCofins} />
+                    </div>
+                    <div className="mt-7"><ReferenceFields prefix="product" xml={initial.productXmlUrl} pdf={initial.productPdfUrl} /></div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {step === 3 && (
+            <section className="step-enter">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Descrição geral</p>
+              <h2 className="text-xl font-bold tracking-[-0.025em]">Exceções e alertas</h2>
+              <p className="mt-2 text-sm leading-6 text-[#70766f]">Registre particularidades que a equipe deve observar ao emitir notas.</p>
+              <label className="mt-7 block">
+                <span className="label">Observações</span>
+                <textarea className="field min-h-44 resize-y" name="observations" defaultValue={initial.observations} placeholder="Regras de exceção, especificidades, alertas..." />
+              </label>
+              <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#f1f8f3] p-4 text-sm leading-6 text-[#31513d]">
+                <Check className="mt-1 shrink-0" size={16} />
+                Ao salvar, o cadastro ficará disponível na lista de empresas e poderá ser copiado, editado ou excluído.
+              </div>
+            </section>
+          )}
+
+          {state.error && <div role="alert" className="mt-6 rounded-lg bg-[#fff1ef] px-4 py-3 text-sm font-semibold text-[#963b33]">{state.error}</div>}
+        </div>
+
+        <div className="mt-6 flex items-center justify-between">
+          <button type="button" className="btn-secondary" disabled={step === 0 || pending} onClick={() => setStep((current) => Math.max(0, current - 1))}><ArrowLeft size={16} /> Anterior</button>
+          {step < steps.length - 1 ? (
+            <button type="button" className="btn-primary" onClick={nextStep}>Continuar <ArrowRight size={16} /></button>
+          ) : (
+            <button type="submit" className="btn-primary" disabled={pending}>{pending ? "Salvando..." : initial.id ? "Salvar alterações" : "Cadastrar empresa"} <Check size={16} /></button>
+          )}
+        </div>
+      </div>
+    </form>
+  );
+}

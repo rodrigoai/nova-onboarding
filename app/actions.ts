@@ -1,0 +1,187 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { encryptSecret } from "@/lib/crypto";
+import { digits } from "@/lib/format";
+import { getPrisma } from "@/lib/prisma";
+
+export type FormState = { error?: string };
+
+const optionalText = z.string().trim().transform((value) => value || null);
+const optionalUrl = z
+  .string()
+  .trim()
+  .refine((value) => !value || /^https?:\/\//i.test(value), "Informe um link válido.")
+  .transform((value) => value || null);
+const optionalRate = z
+  .string()
+  .trim()
+  .refine(
+    (value) => !value || /^\d{1,3}([.,]\d{1,4})?$/.test(value),
+    "Use uma alíquota entre 0 e 100.",
+  )
+  .transform((value) => (value ? value.replace(",", ".") : null))
+  .refine((value) => value === null || Number(value) <= 100, "A alíquota máxima é 100%.");
+
+function validCnpj(value: string) {
+  const cnpj = digits(value);
+  if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
+  const calculate = (length: number) => {
+    let size = length - 7;
+    let sum = 0;
+    for (let index = length; index >= 1; index -= 1) {
+      sum += Number(cnpj[length - index]) * size--;
+      if (size < 2) size = 9;
+    }
+    const result = sum % 11;
+    return result < 2 ? 0 : 11 - result;
+  };
+  return calculate(12) === Number(cnpj[12]) && calculate(13) === Number(cnpj[13]);
+}
+
+const companySchema = z
+  .object({
+    legalName: z.string().trim().min(2, "Informe a razão social."),
+    cnpj: z.string().trim().refine(validCnpj, "Informe um CNPJ válido."),
+    noteTypes: z.array(z.enum(["SERVICE", "PRODUCT"])).min(1, "Selecione um tipo de nota."),
+    municipalRegistration: optionalText,
+    stateRegistration: optionalText,
+    certificateUrl: optionalUrl,
+    certificatePassword: optionalText,
+    serviceCnae: optionalText,
+    serviceCode: optionalText,
+    serviceIss: optionalRate,
+    serviceIr: optionalRate,
+    servicePis: optionalRate,
+    serviceCofins: optionalRate,
+    serviceCsll: optionalRate,
+    serviceXmlUrl: optionalUrl,
+    servicePdfUrl: optionalUrl,
+    productCnae: optionalText,
+    productNcm: optionalText,
+    productIr: optionalRate,
+    productPis: optionalRate,
+    productCofins: optionalRate,
+    productXmlUrl: optionalUrl,
+    productPdfUrl: optionalUrl,
+    productIcmsRules: z.string().transform((value, context) => {
+      try {
+        const rules = JSON.parse(value || "[]");
+        if (!Array.isArray(rules)) throw new Error();
+        return rules.filter((rule) => rule.state || rule.taxStatus || rule.rate || rule.taxBase);
+      } catch {
+        context.addIssue({ code: "custom", message: "Regras de ICMS inválidas." });
+        return z.NEVER;
+      }
+    }),
+    observations: optionalText,
+  })
+  .superRefine((data, context) => {
+    if (data.noteTypes.includes("SERVICE") && !data.municipalRegistration) {
+      context.addIssue({ code: "custom", path: ["municipalRegistration"], message: "Informe a inscrição municipal." });
+    }
+    if (data.noteTypes.includes("PRODUCT") && !data.stateRegistration) {
+      context.addIssue({ code: "custom", path: ["stateRegistration"], message: "Informe a inscrição estadual ou ISENTO." });
+    }
+  });
+
+function stringValue(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "");
+}
+
+function parseCompany(formData: FormData) {
+  const raw = {
+    legalName: stringValue(formData, "legalName"),
+    cnpj: stringValue(formData, "cnpj"),
+    noteTypes: formData.getAll("noteTypes").map(String),
+    municipalRegistration: stringValue(formData, "municipalRegistration"),
+    stateRegistration: stringValue(formData, "stateRegistration"),
+    certificateUrl: stringValue(formData, "certificateUrl"),
+    certificatePassword: stringValue(formData, "certificatePassword"),
+    serviceCnae: stringValue(formData, "serviceCnae"),
+    serviceCode: stringValue(formData, "serviceCode"),
+    serviceIss: stringValue(formData, "serviceIss"),
+    serviceIr: stringValue(formData, "serviceIr"),
+    servicePis: stringValue(formData, "servicePis"),
+    serviceCofins: stringValue(formData, "serviceCofins"),
+    serviceCsll: stringValue(formData, "serviceCsll"),
+    serviceXmlUrl: stringValue(formData, "serviceXmlUrl"),
+    servicePdfUrl: stringValue(formData, "servicePdfUrl"),
+    productCnae: stringValue(formData, "productCnae"),
+    productNcm: stringValue(formData, "productNcm"),
+    productIr: stringValue(formData, "productIr"),
+    productPis: stringValue(formData, "productPis"),
+    productCofins: stringValue(formData, "productCofins"),
+    productXmlUrl: stringValue(formData, "productXmlUrl"),
+    productPdfUrl: stringValue(formData, "productPdfUrl"),
+    productIcmsRules: stringValue(formData, "productIcmsRules"),
+    observations: stringValue(formData, "observations"),
+  };
+  return companySchema.safeParse(raw);
+}
+
+function messageFromError(error: unknown) {
+  if (error instanceof Error && error.message.includes("Unique constraint")) {
+    return "Já existe uma empresa com este CNPJ.";
+  }
+  return "Não foi possível salvar. Revise os dados e tente novamente.";
+}
+
+export async function createCompany(_: FormState, formData: FormData): Promise<FormState> {
+  const result = parseCompany(formData);
+  if (!result.success) return { error: result.error.issues[0]?.message };
+  let companyId: string;
+  try {
+    const data = result.data;
+    const company = await getPrisma().company.create({
+      data: {
+        ...data,
+        cnpj: digits(data.cnpj),
+        certificatePassword: encryptSecret(data.certificatePassword),
+        municipalRegistration: data.noteTypes.includes("SERVICE") ? data.municipalRegistration : null,
+        stateRegistration: data.noteTypes.includes("PRODUCT") ? data.stateRegistration : null,
+      },
+    });
+    companyId = company.id;
+    revalidatePath("/");
+  } catch (error) {
+    return { error: messageFromError(error) };
+  }
+  redirect(`/companies/${companyId}`);
+}
+
+export async function updateCompany(id: string, _: FormState, formData: FormData): Promise<FormState> {
+  const result = parseCompany(formData);
+  if (!result.success) return { error: result.error.issues[0]?.message };
+  let companyId: string;
+  try {
+    const data = result.data;
+    const current = await getPrisma().company.findUnique({ where: { id }, select: { certificatePassword: true } });
+    const company = await getPrisma().company.update({
+      where: { id },
+      data: {
+        ...data,
+        cnpj: digits(data.cnpj),
+        certificatePassword: data.certificatePassword
+          ? encryptSecret(data.certificatePassword)
+          : current?.certificatePassword,
+        municipalRegistration: data.noteTypes.includes("SERVICE") ? data.municipalRegistration : null,
+        stateRegistration: data.noteTypes.includes("PRODUCT") ? data.stateRegistration : null,
+      },
+    });
+    companyId = company.id;
+    revalidatePath("/");
+    revalidatePath(`/companies/${id}`);
+  } catch (error) {
+    return { error: messageFromError(error) };
+  }
+  redirect(`/companies/${companyId}`);
+}
+
+export async function deleteCompany(id: string) {
+  await getPrisma().company.delete({ where: { id } });
+  revalidatePath("/");
+  redirect("/");
+}
