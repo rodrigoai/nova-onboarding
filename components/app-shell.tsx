@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { Building2, LifeBuoy, LogOut, Settings } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
-      <aside className="bg-[#151b17] px-5 py-5 text-white lg:fixed lg:inset-y-0 lg:w-[232px]">
-        <Link href="/" className="flex items-center gap-2.5 text-[19px] font-bold tracking-[-0.03em]">
-          <span className="grid size-8 place-items-center rounded-lg bg-[#39d47c] text-[#102519]">n</span>
-          nova.money
+      <aside className="bg-[#52248e] px-5 py-5 text-white lg:fixed lg:inset-y-0 lg:w-[232px]">
+        <Link href="/" className="inline-flex py-1">
+          <BrandLogo light />
         </Link>
         <nav className="mt-8 flex gap-2 lg:block">
-          <Link href="/" className="flex items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold">
+          <Link href="/" className="flex items-center gap-3 rounded-xl bg-white/14 px-3 py-2.5 text-sm font-semibold shadow-[inset_0_0_0_1px_rgba(255,255,255,.07)]">
             <Building2 size={17} /> Empresas
           </Link>
           <span className="hidden items-center gap-3 px-3 py-2.5 text-sm text-white/45 lg:flex">

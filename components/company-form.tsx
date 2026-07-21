@@ -83,16 +83,16 @@ function ReferenceFields({ prefix, xml, pdf }: { prefix: "service" | "product"; 
   const [hasXml, setHasXml] = useState(Boolean(xml));
   const [hasPdf, setHasPdf] = useState(Boolean(pdf));
   return (
-    <div className="border-t border-[#e7e9e5] pt-5">
+    <div className="border-t border-[#e9e9ed] pt-5">
       <h3 className="text-sm font-bold">Notas de referência</h3>
       <div className="mt-3 space-y-3">
-        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#4d534d]">
-          <input className="size-4 accent-[#1d6d42]" type="checkbox" checked={hasXml} onChange={(event) => setHasXml(event.target.checked)} />
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#5f5c68]">
+          <input className="size-4 accent-[#52248e]" type="checkbox" checked={hasXml} onChange={(event) => setHasXml(event.target.checked)} />
           Possui nota de referência XML
         </label>
         {hasXml && <input className="field step-enter" type="url" name={`${prefix}XmlUrl`} defaultValue={xml} placeholder="https://.../nota.xml" />}
-        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#4d534d]">
-          <input className="size-4 accent-[#1d6d42]" type="checkbox" checked={hasPdf} onChange={(event) => setHasPdf(event.target.checked)} />
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#5f5c68]">
+          <input className="size-4 accent-[#52248e]" type="checkbox" checked={hasPdf} onChange={(event) => setHasPdf(event.target.checked)} />
           Possui nota de referência PDF
         </label>
         {hasPdf && <input className="field step-enter" type="url" name={`${prefix}PdfUrl`} defaultValue={pdf} placeholder="https://.../nota.pdf" />}
@@ -132,15 +132,15 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
   return (
     <form ref={formRef} action={formAction} className="page-enter">
       <input type="hidden" name="productIcmsRules" value={JSON.stringify(rules)} />
-      <div className="border-b border-[#e0e3de] bg-white px-5 py-5 sm:px-8 lg:px-12">
+      <div className="border-b border-[#e9e9ed] bg-white px-5 py-5 sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-5">
           <div>
-            <Link href={initial.id ? `/companies/${initial.id}` : "/"} className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#6d736d] hover:text-[#222722]">
+            <Link href={initial.id ? `/companies/${initial.id}` : "/"} className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#6e6e7c] hover:text-[#52248e]">
               <ArrowLeft size={14} /> Voltar
             </Link>
             <h1 className="text-2xl font-bold tracking-[-0.035em] sm:text-[28px]">{initial.id ? "Editar empresa" : "Nova empresa"}</h1>
           </div>
-          <span className="hidden text-sm text-[#727872] sm:block">Etapa {step + 1} de {steps.length}</span>
+          <span className="hidden text-sm text-[#6e6e7c] sm:block">Etapa {step + 1} de {steps.length}</span>
         </div>
       </div>
 
@@ -148,18 +148,18 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
         <ol className="mb-8 grid grid-cols-4 gap-2" aria-label="Etapas do formulário">
           {steps.map((label, index) => (
             <li key={label} className="min-w-0">
-              <div className={`mb-2 h-1 rounded-full transition-colors ${index <= step ? "bg-[#2fcf74]" : "bg-[#dfe3de]"}`} />
-              <span className={`hidden text-xs font-bold sm:block ${index === step ? "text-[#1b512f]" : "text-[#8a9089]"}`}>{label}</span>
+              <div className={`mb-2 h-1 rounded-full transition-colors ${index <= step ? "bg-[#52248e]" : "bg-[#e3dce9]"}`} />
+              <span className={`hidden text-xs font-bold sm:block ${index === step ? "text-[#52248e]" : "text-[#8a8791]"}`}>{label}</span>
             </li>
           ))}
         </ol>
 
-        <div className="rounded-2xl border border-[#e0e3de] bg-white p-5 shadow-[0_12px_35px_rgba(31,42,34,.05)] sm:p-8">
+        <div className="rounded-[22px] border border-[#e9e9ed] bg-white p-5 shadow-[0_16px_45px_rgba(82,36,142,.07)] sm:p-8">
           {step === 0 && (
             <section className="step-enter" data-company>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Identificação</p>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Identificação</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Dados da empresa emissora</h2>
-              <p className="mt-2 text-sm leading-6 text-[#70766f]">Informe quem emitirá as notas e quais documentos fiscais serão usados.</p>
+              <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Informe quem emitirá as notas e quais documentos fiscais serão usados.</p>
               <div className="mt-7 grid gap-5 sm:grid-cols-2">
                 <Field label="Razão social" name="legalName" defaultValue={initial.legalName} placeholder="Nome registrado da empresa" required />
                 <label className="block">
@@ -174,9 +174,9 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                     const selected = types.includes(type);
                     const label = type === "SERVICE" ? "Serviço" : "Produtos";
                     return (
-                      <label key={type} className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-4 transition ${selected ? "border-[#35b96b] bg-[#f0fbf5]" : "border-[#e0e4df] hover:border-[#c5cbc4]"}`}>
+                      <label key={type} className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-4 transition ${selected ? "border-[#7445ad] bg-[#f3eef9]" : "border-[#e4e2e9] hover:border-[#c9c3d1]"}`}>
                         <span className="font-bold">{label}</span>
-                        <input className="size-4 accent-[#1e7545]" type="checkbox" name="noteTypes" value={type} checked={selected} onChange={() => toggleType(type)} />
+                        <input className="size-4 accent-[#52248e]" type="checkbox" name="noteTypes" value={type} checked={selected} onChange={() => toggleType(type)} />
                       </label>
                     );
                   })}
@@ -192,16 +192,16 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
 
           {step === 1 && (
             <section className="step-enter">
-              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Certificado digital</p>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Certificado digital</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">A1 / E-CNPJ</h2>
-              <p className="mt-2 text-sm leading-6 text-[#70766f]">Adicione um link seguro para o arquivo PFX. A senha será criptografada no banco.</p>
+              <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Adicione um link seguro para o arquivo PFX. A senha será criptografada no banco.</p>
               <div className="mt-7 space-y-5">
                 <Field label="Link do certificado PFX" name="certificateUrl" type="url" defaultValue={initial.certificateUrl} placeholder="https://..." hint="Use um link com acesso restrito e prazo de expiração quando possível." />
                 <label className="block">
                   <span className="label">Senha do certificado</span>
                   <div className="relative">
                     <input className="field pr-12" name="certificatePassword" type={showPassword ? "text" : "password"} placeholder={initial.id ? "Deixe vazio para manter a senha atual" : "Senha do arquivo"} autoComplete="new-password" />
-                    <button type="button" aria-label={showPassword ? "Ocultar senha" : "Exibir senha"} className="absolute right-3 top-3 text-[#777d76]" onClick={() => setShowPassword((value) => !value)}>
+                    <button type="button" aria-label={showPassword ? "Ocultar senha" : "Exibir senha"} className="absolute right-3 top-3 text-[#777481]" onClick={() => setShowPassword((value) => !value)}>
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
@@ -212,13 +212,13 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
 
           {step === 2 && (
             <section className="step-enter">
-              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Produtos e serviços</p>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Produtos e serviços</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Informações tributárias</h2>
-              <p className="mt-2 text-sm leading-6 text-[#70766f]">Preencha somente as seções aplicáveis. Alíquotas devem ser informadas em porcentagem.</p>
+              <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Preencha somente as seções aplicáveis. Alíquotas devem ser informadas em porcentagem.</p>
               <div className="mt-8 space-y-10">
                 {types.includes("SERVICE") && (
                   <div>
-                    <h3 className="mb-5 border-b border-[#e6e9e4] pb-3 text-base font-bold">Serviços</h3>
+                    <h3 className="mb-5 border-b border-[#e9e9ed] pb-3 text-base font-bold">Serviços</h3>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field label="CNAE de referência" name="serviceCnae" defaultValue={initial.serviceCnae} placeholder="0000-0/00" />
                       <Field label="Código na lista de serviço" name="serviceCode" defaultValue={initial.serviceCode} placeholder="Código municipal" />
@@ -236,7 +236,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                 )}
                 {types.includes("PRODUCT") && (
                   <div>
-                    <h3 className="mb-5 border-b border-[#e6e9e4] pb-3 text-base font-bold">Produtos</h3>
+                    <h3 className="mb-5 border-b border-[#e9e9ed] pb-3 text-base font-bold">Produtos</h3>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field label="CNAE de referência" name="productCnae" defaultValue={initial.productCnae} placeholder="0000-0/00" />
                       <Field label="NCM" name="productNcm" defaultValue={initial.productNcm} placeholder="0000.00.00" />
@@ -247,7 +247,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                     </div>
                     <div className="mt-3 space-y-3">
                       {rules.map((rule, index) => (
-                        <div key={index} className="grid gap-3 rounded-xl bg-[#f7f8f5] p-3 sm:grid-cols-[.65fr_1.35fr_1fr_1fr_auto]">
+                        <div key={index} className="grid gap-3 rounded-xl bg-[#f8f7fc] p-3 sm:grid-cols-[.65fr_1.35fr_1fr_1fr_auto]">
                           <input className="field" aria-label="Estado" placeholder="UF" maxLength={2} value={rule.state} onChange={(e) => updateRule(index, "state", e.target.value.toUpperCase())} />
                           <input className="field" aria-label="Situação tributária" placeholder="Situação tributária" value={rule.taxStatus} onChange={(e) => updateRule(index, "taxStatus", e.target.value)} />
                           <input className="field" aria-label="Alíquota" placeholder="Alíquota %" inputMode="decimal" value={rule.rate} onChange={(e) => updateRule(index, "rate", e.target.value)} />
@@ -271,14 +271,14 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
 
           {step === 3 && (
             <section className="step-enter">
-              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#23824c]">Descrição geral</p>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[.14em] text-[#6b3ba6]">Descrição geral</p>
               <h2 className="text-xl font-bold tracking-[-0.025em]">Exceções e alertas</h2>
-              <p className="mt-2 text-sm leading-6 text-[#70766f]">Registre particularidades que a equipe deve observar ao emitir notas.</p>
+              <p className="mt-2 text-sm leading-6 text-[#6e6e7c]">Registre particularidades que a equipe deve observar ao emitir notas.</p>
               <label className="mt-7 block">
                 <span className="label">Observações</span>
                 <textarea className="field min-h-44 resize-y" name="observations" defaultValue={initial.observations} placeholder="Regras de exceção, especificidades, alertas..." />
               </label>
-              <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#f1f8f3] p-4 text-sm leading-6 text-[#31513d]">
+              <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#f3eef9] p-4 text-sm leading-6 text-[#52248e]">
                 <Check className="mt-1 shrink-0" size={16} />
                 Ao salvar, o cadastro ficará disponível na lista de empresas e poderá ser copiado, editado ou excluído.
               </div>
