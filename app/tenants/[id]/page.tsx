@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpenText, Building2, Database, KeyRound, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Building2, Database, KeyRound, ListTree, Pencil } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { DeleteTenantButton } from "@/components/delete-tenant-button";
@@ -58,6 +58,14 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
             <div className="min-h-28 whitespace-pre-wrap rounded-2xl border border-[#e9e9ed] bg-white p-5 text-sm leading-7 text-[#45434e] shadow-[0_10px_30px_rgba(82,36,142,.04)]">
               {tenant.description || "Nenhuma descrição registrada."}
             </div>
+          </section>
+
+          <section className="mt-9 flex flex-col justify-between gap-4 border-y border-[#e7e3eb] py-6 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f0e9f7] text-[#63339d]"><ListTree size={19} /></span>
+              <div><h2 className="font-bold">Plano de contas</h2><p className="mt-1 text-xs leading-5 text-[#7c7984]">Mescle a estrutura atual com sugestões baseadas neste negócio.</p></div>
+            </div>
+            <Link href={`/tenants/${id}/chart-of-accounts`} className="btn-secondary">Configurar plano <ArrowRight size={15} /></Link>
           </section>
 
           <section className="mt-9">
