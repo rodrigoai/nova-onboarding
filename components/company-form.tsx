@@ -12,6 +12,7 @@ export type CompanyFormValues = {
   id?: string;
   legalName?: string;
   cnpj?: string;
+  taxRegime?: "SIMPLES_NACIONAL" | "NAO_OPTANTE" | "";
   addressStreet?: string;
   addressNumber?: string;
   addressComplement?: string;
@@ -112,6 +113,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
   const [step, setStep] = useState(0);
   const [cnpj, setCnpj] = useState(initial.cnpj ? formatCnpj(initial.cnpj) : "");
   const [legalName, setLegalName] = useState(initial.legalName ?? "");
+  const [taxRegime, setTaxRegime] = useState(initial.taxRegime ?? "");
   const [address, setAddress] = useState({
     addressStreet: initial.addressStreet ?? "",
     addressNumber: initial.addressNumber ?? "",
@@ -148,6 +150,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
         const data = await response.json() as {
           error?: string;
           legalName?: string;
+          taxRegime?: "SIMPLES_NACIONAL" | "NAO_OPTANTE" | "";
           addressStreet?: string;
           addressNumber?: string;
           addressComplement?: string;
@@ -158,6 +161,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
         };
         if (!response.ok) throw new Error(data.error || "Não foi possível consultar este CNPJ.");
         setLegalName(data.legalName ?? "");
+        setTaxRegime(data.taxRegime ?? "");
         setAddress({
           addressStreet: data.addressStreet ?? "",
           addressNumber: data.addressNumber ?? "",
@@ -196,7 +200,7 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
 
   function nextStep() {
     if (step === 0) {
-      const required = [...(formRef.current?.querySelectorAll("[data-company] input[required]") ?? [])] as HTMLInputElement[];
+      const required = [...(formRef.current?.querySelectorAll("[data-company] [required]") ?? [])] as (HTMLInputElement | HTMLSelectElement)[];
       if (types.length === 0) return;
       const invalid = required.find((input) => !input.reportValidity());
       if (invalid) return;
@@ -261,6 +265,15 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                   <label className="block sm:col-span-2">
                     <span className="label">Razão social <span className="text-[#af3d34]">*</span></span>
                     <input className="field" name="legalName" value={legalName} onChange={(event) => setLegalName(event.currentTarget.value)} placeholder="Nome registrado da empresa" required />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="label">Regime de Tributação <span className="text-[#af3d34]">*</span></span>
+                    <select className="field" name="taxRegime" value={taxRegime} onChange={(event) => setTaxRegime(event.currentTarget.value as typeof taxRegime)} required>
+                      <option value="">Selecione o regime</option>
+                      <option value="SIMPLES_NACIONAL">Simples Nacional</option>
+                      <option value="NAO_OPTANTE">Não optante pelo Simples Nacional</option>
+                    </select>
+                    <span className="hint block">Preenchido conforme a opção pelo Simples Nacional retornada pela OpenCNPJ.</span>
                   </label>
                   <label className="block sm:col-span-2">
                     <span className="label">Logradouro</span>

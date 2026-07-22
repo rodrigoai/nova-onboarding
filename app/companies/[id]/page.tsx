@@ -39,6 +39,12 @@ function percent(value: string | number | null) {
   return value ? `${value.toString()}%` : null;
 }
 
+function taxRegimeLabel(value: "SIMPLES_NACIONAL" | "NAO_OPTANTE" | null) {
+  if (value === "SIMPLES_NACIONAL") return "Simples Nacional";
+  if (value === "NAO_OPTANTE") return "Não optante pelo Simples Nacional";
+  return null;
+}
+
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const company = await getCompany(id);
@@ -52,6 +58,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const copySummary = [
     company.legalName,
     `CNPJ: ${formatCnpj(company.cnpj)}`,
+    `Regime de Tributação: ${taxRegimeLabel(company.taxRegime) || "Não informado"}`,
     addressLine ? `Endereço: ${addressLine}${company.addressComplement ? `, ${company.addressComplement}` : ""}` : "",
     addressLocation ? `${addressLocation}${company.addressZipCode ? ` · CEP ${company.addressZipCode}` : ""}` : "",
     `Tipo de nota: ${company.noteTypes.map((item) => item === "SERVICE" ? "Serviço" : "Produto").join(" e ")}`,
@@ -89,6 +96,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               <dl className="rounded-2xl border border-[#e9e9ed] bg-white px-5 shadow-[0_10px_30px_rgba(82,36,142,.04)]">
                 <Value label="Razão social" value={company.legalName} />
                 <Value label="CNPJ" value={formatCnpj(company.cnpj)} />
+                <Value label="Regime de Tributação" value={taxRegimeLabel(company.taxRegime)} />
                 {service && <Value label="Inscrição Municipal" value={company.municipalRegistration} />}
                 {product && <Value label="Inscrição Estadual" value={company.stateRegistration} />}
               </dl>

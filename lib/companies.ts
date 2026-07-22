@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type NoteType = "SERVICE" | "PRODUCT";
+export type TaxRegime = "SIMPLES_NACIONAL" | "NAO_OPTANTE";
 export type IcmsRule = {
   state?: string;
   taxStatus?: string;
@@ -12,6 +13,7 @@ export type Company = {
   id: string;
   legalName: string;
   cnpj: string;
+  taxRegime: TaxRegime | null;
   addressStreet: string | null;
   addressNumber: string | null;
   addressComplement: string | null;
@@ -50,6 +52,7 @@ type CompanyRow = {
   id: string;
   legal_name: string;
   cnpj: string;
+  tax_regime: TaxRegime | null;
   address_street: string | null;
   address_number: string | null;
   address_complement: string | null;
@@ -91,6 +94,7 @@ function fromRow(row: CompanyRow): Company {
     id: row.id,
     legalName: row.legal_name,
     cnpj: row.cnpj,
+    taxRegime: row.tax_regime,
     addressStreet: row.address_street,
     addressNumber: row.address_number,
     addressComplement: row.address_complement,
@@ -130,6 +134,7 @@ function toRow(company: CompanyWrite) {
   return {
     legal_name: company.legalName,
     cnpj: company.cnpj,
+    tax_regime: company.taxRegime,
     address_street: company.addressStreet,
     address_number: company.addressNumber,
     address_complement: company.addressComplement,

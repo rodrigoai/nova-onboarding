@@ -8,6 +8,7 @@ type OpenCnpjResponse = {
   municipio?: string;
   uf?: string;
   cep?: string;
+  opcao_simples?: "S" | "N" | string;
 };
 
 export async function GET(_request: Request, context: RouteContext<"/api/cnpj/[cnpj]">) {
@@ -35,6 +36,7 @@ export async function GET(_request: Request, context: RouteContext<"/api/cnpj/[c
 
     return Response.json({
       legalName: data.razao_social,
+      taxRegime: data.opcao_simples === "S" ? "SIMPLES_NACIONAL" : data.opcao_simples === "N" ? "NAO_OPTANTE" : "",
       addressStreet: [data.tipo_logradouro, data.logradouro].filter(Boolean).join(" "),
       addressNumber: data.numero ?? "",
       addressComplement: data.complemento ?? "",

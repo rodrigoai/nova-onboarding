@@ -51,6 +51,7 @@ const companySchema = z
   .object({
     legalName: z.string().trim().min(2, "Informe a razão social."),
     cnpj: z.string().trim().refine(validCnpj, "Informe um CNPJ válido."),
+    taxRegime: z.enum(["SIMPLES_NACIONAL", "NAO_OPTANTE"], { error: "Informe o regime de tributação." }),
     addressStreet: optionalText,
     addressNumber: optionalText,
     addressComplement: optionalText,
@@ -108,6 +109,7 @@ function parseCompany(formData: FormData) {
   const raw = {
     legalName: stringValue(formData, "legalName"),
     cnpj: stringValue(formData, "cnpj"),
+    taxRegime: stringValue(formData, "taxRegime"),
     addressStreet: stringValue(formData, "addressStreet"),
     addressNumber: stringValue(formData, "addressNumber"),
     addressComplement: stringValue(formData, "addressComplement"),

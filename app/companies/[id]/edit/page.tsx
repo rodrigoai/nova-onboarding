@@ -15,6 +15,7 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
     id: company.id,
     legalName: company.legalName,
     cnpj: company.cnpj,
+    taxRegime: company.taxRegime ?? "",
     addressStreet: company.addressStreet ?? "",
     addressNumber: company.addressNumber ?? "",
     addressComplement: company.addressComplement ?? "",
