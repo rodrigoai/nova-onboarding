@@ -3,16 +3,18 @@ import { AppShell } from "@/components/app-shell";
 import { CompanyForm, type CompanyFormValues } from "@/components/company-form";
 import { getCompany } from "@/lib/companies";
 import { rate } from "@/lib/format";
+import { listTenants } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const company = await getCompany(id);
+  const [company, tenants] = await Promise.all([getCompany(id), listTenants()]);
   if (!company) notFound();
   const rules = Array.isArray(company.productIcmsRules) ? company.productIcmsRules : [];
   const initial: CompanyFormValues = {
     id: company.id,
+    tenantId: company.tenantId,
     legalName: company.legalName,
     cnpj: company.cnpj,
     taxRegime: company.taxRegime ?? "",
@@ -37,5 +39,5 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
     productXmlUrl: company.productXmlUrl ?? "", productPdfUrl: company.productPdfUrl ?? "",
     observations: company.observations ?? "",
   };
-  return <AppShell><CompanyForm initial={initial} /></AppShell>;
+  return <AppShell><CompanyForm initial={initial} tenants={tenants} /></AppShell>;
 }

@@ -1,9 +1,15 @@
 import Link from "next/link";
-import { Building2, LifeBuoy, LogOut, Settings } from "lucide-react";
+import { Building2, Database, LifeBuoy, LogOut } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import { BrandLogo } from "@/components/brand-logo";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  active = "companies",
+}: {
+  children: React.ReactNode;
+  active?: "companies" | "tenants";
+}) {
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
       <aside className="bg-[#52248e] px-5 py-5 text-white lg:fixed lg:inset-y-0 lg:w-[232px]">
@@ -11,12 +17,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <BrandLogo light />
         </Link>
         <nav className="mt-8 flex gap-2 lg:block">
-          <Link href="/" className="flex items-center gap-3 rounded-xl bg-white/14 px-3 py-2.5 text-sm font-semibold shadow-[inset_0_0_0_1px_rgba(255,255,255,.07)]">
+          <Link href="/" className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${active === "companies" ? "bg-white/14 shadow-[inset_0_0_0_1px_rgba(255,255,255,.07)]" : "text-white/65 hover:bg-white/8 hover:text-white"}`}>
             <Building2 size={17} /> Empresas
           </Link>
-          <span className="hidden items-center gap-3 px-3 py-2.5 text-sm text-white/45 lg:flex">
-            <Settings size={17} /> Configurações
-          </span>
+          <Link href="/tenants" className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${active === "tenants" ? "bg-white/14 shadow-[inset_0_0_0_1px_rgba(255,255,255,.07)]" : "text-white/65 hover:bg-white/8 hover:text-white"}`}>
+            <Database size={17} /> Tenants
+          </Link>
         </nav>
         <div className="mt-6 hidden border-t border-white/10 pt-5 text-xs leading-5 text-white/45 lg:absolute lg:bottom-5 lg:left-5 lg:right-5 lg:block">
           <span className="mb-1 flex items-center gap-2 text-white/65"><LifeBuoy size={14} /> Operações fiscais</span>

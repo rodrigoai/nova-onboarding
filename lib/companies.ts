@@ -11,6 +11,7 @@ export type IcmsRule = {
 
 export type Company = {
   id: string;
+  tenantId: string;
   legalName: string;
   cnpj: string;
   taxRegime: TaxRegime | null;
@@ -50,6 +51,7 @@ export type Company = {
 
 type CompanyRow = {
   id: string;
+  tenant_id: string;
   legal_name: string;
   cnpj: string;
   tax_regime: TaxRegime | null;
@@ -92,6 +94,7 @@ export type CompanyWrite = Omit<Company, "id" | "createdAt" | "updatedAt">;
 function fromRow(row: CompanyRow): Company {
   return {
     id: row.id,
+    tenantId: row.tenant_id,
     legalName: row.legal_name,
     cnpj: row.cnpj,
     taxRegime: row.tax_regime,
@@ -132,6 +135,7 @@ function fromRow(row: CompanyRow): Company {
 
 function toRow(company: CompanyWrite) {
   return {
+    tenant_id: company.tenantId,
     legal_name: company.legalName,
     cnpj: company.cnpj,
     tax_regime: company.taxRegime,
@@ -192,6 +196,17 @@ export async function listCompanies(query: string, type: string) {
     request = request.contains("note_types", [type]);
   }
   const { data, error } = await request;
+  throwIfError(error);
+  return ((data ?? []) as CompanyRow[]).map(fromRow);
+}
+
+export async function listCompaniesByTenant(tenantId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .order("legal_name");
   throwIfError(error);
   return ((data ?? []) as CompanyRow[]).map(fromRow);
 }

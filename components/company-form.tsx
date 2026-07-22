@@ -10,6 +10,7 @@ type IcmsRule = { state: string; taxStatus: string; rate: string; taxBase: strin
 
 export type CompanyFormValues = {
   id?: string;
+  tenantId?: string;
   legalName?: string;
   cnpj?: string;
   taxRegime?: "SIMPLES_NACIONAL" | "NAO_OPTANTE" | "";
@@ -43,6 +44,8 @@ export type CompanyFormValues = {
   productPdfUrl?: string;
   observations?: string;
 };
+
+export type TenantOption = { id: string; tenantName: string };
 
 const steps = ["Empresa", "Certificado", "Tributação", "Observações"];
 const emptyRule: IcmsRule = { state: "", taxStatus: "", rate: "", taxBase: "" };
@@ -109,7 +112,13 @@ function ReferenceFields({ prefix, xml, pdf }: { prefix: "service" | "product"; 
   );
 }
 
-export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
+export function CompanyForm({
+  initial = {},
+  tenants,
+}: {
+  initial?: CompanyFormValues;
+  tenants: TenantOption[];
+}) {
   const [step, setStep] = useState(0);
   const [cnpj, setCnpj] = useState(initial.cnpj ? formatCnpj(initial.cnpj) : "");
   const [legalName, setLegalName] = useState(initial.legalName ?? "");
@@ -262,6 +271,20 @@ export function CompanyForm({ initial = {} }: { initial?: CompanyFormValues }) {
                 <h3 className="text-sm font-bold">Dados cadastrais</h3>
                 <p className="mt-1 text-xs leading-5 text-[#777481]">Os dados preenchidos pela consulta podem ser corrigidos antes de continuar.</p>
                 <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                  <label className="block sm:col-span-2">
+                    <span className="label">Conta principal / Tenant <span className="text-[#af3d34]">*</span></span>
+                    <select className="field" name="tenantId" defaultValue={initial.tenantId ?? ""} required>
+                      <option value="">Selecione o tenant</option>
+                      {tenants.map((tenant) => (
+                        <option key={tenant.id} value={tenant.id}>{tenant.tenantName}.nova.money</option>
+                      ))}
+                    </select>
+                    <span className="hint block">
+                      {tenants.length
+                        ? "A empresa usará a base e a chave desta conta."
+                        : "Cadastre um tenant antes de criar uma empresa."}
+                    </span>
+                  </label>
                   <label className="block sm:col-span-2">
                     <span className="label">Razão social <span className="text-[#af3d34]">*</span></span>
                     <input className="field" name="legalName" value={legalName} onChange={(event) => setLegalName(event.currentTarget.value)} placeholder="Nome registrado da empresa" required />

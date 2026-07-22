@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, FileText, MapPin, Pencil, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Database, ExternalLink, FileText, MapPin, Pencil, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { DeleteButton } from "@/components/delete-button";
 import { getCompany } from "@/lib/companies";
 import { decryptSecret } from "@/lib/crypto";
 import { formatCnpj, formatDate } from "@/lib/format";
+import { getTenant } from "@/lib/tenants";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const company = await getCompany(id);
   if (!company) notFound();
+  const tenant = await getTenant(company.tenantId);
   const password = decryptSecret(company.certificatePassword);
   const rules = company.productIcmsRules ?? [];
   const service = company.noteTypes.includes("SERVICE");
@@ -58,6 +60,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const copySummary = [
     company.legalName,
     `CNPJ: ${formatCnpj(company.cnpj)}`,
+    tenant ? `Tenant: ${tenant.tenantName}.nova.money` : "",
     `Regime de Tributação: ${taxRegimeLabel(company.taxRegime) || "Não informado"}`,
     addressLine ? `Endereço: ${addressLine}${company.addressComplement ? `, ${company.addressComplement}` : ""}` : "",
     addressLocation ? `${addressLocation}${company.addressZipCode ? ` · CEP ${company.addressZipCode}` : ""}` : "",
@@ -83,6 +86,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               </div>
               <h1 className="truncate text-3xl font-bold tracking-[-0.045em] sm:text-[38px]">{company.legalName}</h1>
               <p className="mt-2 text-sm text-[#6e6e7c]">{formatCnpj(company.cnpj)} · Atualizado em {formatDate(company.updatedAt)}</p>
+              {tenant && <Link href={`/tenants/${tenant.id}`} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#f0e9f7] px-2.5 py-1 text-[11px] font-bold text-[#63339d] hover:bg-[#e7dcf2]"><Database size={12} /> {tenant.tenantName}.nova.money</Link>}
             </div>
             <div className="flex flex-wrap gap-2">
               <CopyButton value={copySummary} label="Copiar tudo" />

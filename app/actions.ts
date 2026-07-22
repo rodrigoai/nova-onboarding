@@ -12,6 +12,12 @@ import {
   type CompanyWrite,
 } from "@/lib/companies";
 import { digits } from "@/lib/format";
+import {
+  createTenantRecord,
+  deleteTenantRecord,
+  getTenant,
+  updateTenantRecord,
+} from "@/lib/tenants";
 
 export type FormState = { error?: string };
 
@@ -49,6 +55,7 @@ function validCnpj(value: string) {
 
 const companySchema = z
   .object({
+    tenantId: z.string().uuid("Selecione uma conta principal."),
     legalName: z.string().trim().min(2, "Informe a razão social."),
     cnpj: z.string().trim().refine(validCnpj, "Informe um CNPJ válido."),
     taxRegime: z.enum(["SIMPLES_NACIONAL", "NAO_OPTANTE"], { error: "Informe o regime de tributação." }),
@@ -107,6 +114,7 @@ function stringValue(formData: FormData, key: string) {
 
 function parseCompany(formData: FormData) {
   const raw = {
+    tenantId: stringValue(formData, "tenantId"),
     legalName: stringValue(formData, "legalName"),
     cnpj: stringValue(formData, "cnpj"),
     taxRegime: stringValue(formData, "taxRegime"),
@@ -142,6 +150,41 @@ function parseCompany(formData: FormData) {
     observations: stringValue(formData, "observations"),
   };
   return companySchema.safeParse(raw);
+}
+
+const tenantSchema = z.object({
+  tenantName: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, "Informe o nome do tenant.")
+    .max(63, "O nome deve ter no máximo 63 caracteres.")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Use apenas letras minúsculas, números e hífens entre termos.",
+    ),
+  novaMoneyKey: z.string().trim(),
+});
+
+function parseTenant(formData: FormData) {
+  return tenantSchema.safeParse({
+    tenantName: stringValue(formData, "tenantName"),
+    novaMoneyKey: stringValue(formData, "novaMoneyKey"),
+  });
+}
+
+function tenantMessageFromError(error: unknown) {
+  if (
+    error instanceof Error &&
+    (error.message.includes("duplicate key") ||
+      (error as Error & { code?: string }).code === "23505")
+  ) {
+    return "Este nome de tenant já está em uso.";
+  }
+  if (error instanceof Error && (error as Error & { code?: string }).code === "23503") {
+    return "Mova ou exclua as empresas vinculadas antes de excluir este tenant.";
+  }
+  return "Não foi possível salvar o tenant. Tente novamente.";
 }
 
 function messageFromError(error: unknown) {
@@ -205,4 +248,60 @@ export async function deleteCompany(id: string) {
   await deleteCompanyRecord(id);
   revalidatePath("/");
   redirect("/");
+}
+
+export async function createTenant(_: FormState, formData: FormData): Promise<FormState> {
+  const result = parseTenant(formData);
+  if (!result.success) return { error: result.error.issues[0]?.message };
+  if (!result.data.novaMoneyKey) return { error: "Informe a Nova Money Key." };
+  let tenantId: string;
+  try {
+    const tenant = await createTenantRecord({
+      tenantName: result.data.tenantName,
+      novaMoneyKey: encryptSecret(result.data.novaMoneyKey) ?? "",
+    });
+    tenantId = tenant.id;
+    revalidatePath("/tenants");
+  } catch (error) {
+    return { error: tenantMessageFromError(error) };
+  }
+  redirect(`/tenants/${tenantId}`);
+}
+
+export async function updateTenant(id: string, _: FormState, formData: FormData): Promise<FormState> {
+  const result = parseTenant(formData);
+  if (!result.success) return { error: result.error.issues[0]?.message };
+  let tenantId: string;
+  try {
+    const current = await getTenant(id);
+    if (!current) return { error: "Tenant não encontrado." };
+    const tenant = await updateTenantRecord(id, {
+      tenantName: result.data.tenantName,
+      novaMoneyKey: result.data.novaMoneyKey
+        ? encryptSecret(result.data.novaMoneyKey) ?? ""
+        : current.novaMoneyKey,
+    });
+    tenantId = tenant.id;
+    revalidatePath("/tenants");
+    revalidatePath(`/tenants/${id}`);
+  } catch (error) {
+    return { error: tenantMessageFromError(error) };
+  }
+  redirect(`/tenants/${tenantId}`);
+}
+
+export async function deleteTenant(
+  id: string,
+  previousState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void previousState;
+  void formData;
+  try {
+    await deleteTenantRecord(id);
+    revalidatePath("/tenants");
+  } catch (error) {
+    return { error: tenantMessageFromError(error) };
+  }
+  redirect("/tenants");
 }
