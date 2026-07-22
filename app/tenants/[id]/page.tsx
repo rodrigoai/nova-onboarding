@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Building2, Database, KeyRound, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, Building2, Database, KeyRound, Pencil } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { DeleteTenantButton } from "@/components/delete-tenant-button";
@@ -52,6 +52,13 @@ export default async function TenantDetailPage({ params }: { params: Promise<{ i
               <p className="mt-2 text-xs leading-5 text-[#7c7984]">A chave permanece criptografada no banco e só é recuperada para uso autorizado.</p>
             </section>
           </div>
+
+          <section className="mt-9">
+            <div className="mb-2 flex items-center gap-2"><BookOpenText size={17} className="text-[#52248e]" /><h2 className="font-bold">Sobre o negócio</h2></div>
+            <div className="min-h-28 whitespace-pre-wrap rounded-2xl border border-[#e9e9ed] bg-white p-5 text-sm leading-7 text-[#45434e] shadow-[0_10px_30px_rgba(82,36,142,.04)]">
+              {tenant.description || "Nenhuma descrição registrada."}
+            </div>
+          </section>
 
           <section className="mt-9">
             <div className="mb-3 flex items-end justify-between gap-4">

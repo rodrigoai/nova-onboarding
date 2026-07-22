@@ -163,12 +163,18 @@ const tenantSchema = z.object({
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Use apenas letras minúsculas, números e hífens entre termos.",
     ),
+  description: z
+    .string()
+    .trim()
+    .max(10000, "A descrição deve ter no máximo 10.000 caracteres.")
+    .transform((value) => value || null),
   novaMoneyKey: z.string().trim(),
 });
 
 function parseTenant(formData: FormData) {
   return tenantSchema.safeParse({
     tenantName: stringValue(formData, "tenantName"),
+    description: stringValue(formData, "description"),
     novaMoneyKey: stringValue(formData, "novaMoneyKey"),
   });
 }
@@ -258,6 +264,7 @@ export async function createTenant(_: FormState, formData: FormData): Promise<Fo
   try {
     const tenant = await createTenantRecord({
       tenantName: result.data.tenantName,
+      description: result.data.description,
       novaMoneyKey: encryptSecret(result.data.novaMoneyKey) ?? "",
     });
     tenantId = tenant.id;
@@ -277,6 +284,7 @@ export async function updateTenant(id: string, _: FormState, formData: FormData)
     if (!current) return { error: "Tenant não encontrado." };
     const tenant = await updateTenantRecord(id, {
       tenantName: result.data.tenantName,
+      description: result.data.description,
       novaMoneyKey: result.data.novaMoneyKey
         ? encryptSecret(result.data.novaMoneyKey) ?? ""
         : current.novaMoneyKey,

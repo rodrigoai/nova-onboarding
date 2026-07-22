@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export type Tenant = {
   id: string;
   tenantName: string;
+  description: string | null;
   novaMoneyKey: string;
   companyCount: number;
   createdAt: string;
@@ -12,18 +13,20 @@ export type Tenant = {
 type TenantRow = {
   id: string;
   tenant_name: string;
+  description: string | null;
   nova_money_key: string;
   companies?: { count: number }[];
   created_at: string;
   updated_at: string;
 };
 
-export type TenantWrite = Pick<Tenant, "tenantName" | "novaMoneyKey">;
+export type TenantWrite = Pick<Tenant, "tenantName" | "description" | "novaMoneyKey">;
 
 function fromRow(row: TenantRow): Tenant {
   return {
     id: row.id,
     tenantName: row.tenant_name,
+    description: row.description,
     novaMoneyKey: row.nova_money_key,
     companyCount: row.companies?.[0]?.count ?? 0,
     createdAt: row.created_at,
@@ -67,7 +70,11 @@ export async function createTenantRecord(tenant: TenantWrite) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenants")
-    .insert({ tenant_name: tenant.tenantName, nova_money_key: tenant.novaMoneyKey })
+    .insert({
+      tenant_name: tenant.tenantName,
+      description: tenant.description,
+      nova_money_key: tenant.novaMoneyKey,
+    })
     .select("*, companies(count)")
     .single();
   throwIfError(error);
@@ -78,7 +85,11 @@ export async function updateTenantRecord(id: string, tenant: TenantWrite) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenants")
-    .update({ tenant_name: tenant.tenantName, nova_money_key: tenant.novaMoneyKey })
+    .update({
+      tenant_name: tenant.tenantName,
+      description: tenant.description,
+      nova_money_key: tenant.novaMoneyKey,
+    })
     .eq("id", id)
     .select("*, companies(count)")
     .single();

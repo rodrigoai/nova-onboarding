@@ -5,7 +5,7 @@ import { useActionState, useMemo, useState } from "react";
 import { ArrowLeft, Check, Eye, EyeOff } from "lucide-react";
 import { createTenant, updateTenant } from "@/app/actions";
 
-export type TenantFormValues = { id?: string; tenantName?: string };
+export type TenantFormValues = { id?: string; tenantName?: string; description?: string };
 
 export function TenantForm({ initial = {} }: { initial?: TenantFormValues }) {
   const [showKey, setShowKey] = useState(false);
@@ -42,6 +42,18 @@ export function TenantForm({ initial = {} }: { initial?: TenantFormValues }) {
                 <span className="flex items-center rounded-r-xl border-l border-[#e2e0e8] bg-[#f8f7fc] px-3 text-sm text-[#777481]">.nova.money</span>
               </div>
               <span className="hint block">Use letras minúsculas, números e hífens, sem espaços.</span>
+            </label>
+
+            <label className="block">
+              <span className="label">Descrição do tenant</span>
+              <textarea
+                className="field min-h-40 resize-y"
+                name="description"
+                defaultValue={initial.description}
+                placeholder="Descreva o negócio, como ele funciona, seus produtos, serviços e público..."
+                maxLength={10000}
+              />
+              <span className="hint block">Contexto geral sobre o negócio para uso em funcionalidades futuras.</span>
             </label>
 
             <label className="block">
